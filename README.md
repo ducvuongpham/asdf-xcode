@@ -2,7 +2,7 @@
 
 # asdf-xcode [![Build](https://github.com/ducvuongpham/asdf-xcode/actions/workflows/build.yml/badge.svg)](https://github.com/ducvuongpham/asdf-xcode/actions/workflows/build.yml) [![Lint](https://github.com/ducvuongpham/asdf-xcode/actions/workflows/lint.yml/badge.svg)](https://github.com/ducvuongpham/asdf-xcode/actions/workflows/lint.yml)
 
-[xcode](https://github.com/ducvuongpham/xcode) plugin for the [asdf version manager](https://asdf-vm.com).
+[xcode](https://github.com/ducvuongpham/asdf-xcode) plugin for the [asdf version manager](https://asdf-vm.com).
 
 </div>
 
@@ -15,10 +15,10 @@
 
 # Dependencies
 
-**TODO: adapt this section**
-
-- `bash`, `curl`, `tar`, and [POSIX utilities](https://pubs.opengroup.org/onlinepubs/9699919799/idx/utilities.html).
-- `SOME_ENV_VAR`: set this environment variable in your shell config to load the correct version of tool x.
+- `bash` and [POSIX utilities](https://pubs.opengroup.org/onlinepubs/9699919799/idx/utilities.html)
+- `xcodes`: Install with `brew install xcodesorg/made/xcodes`
+- Apple ID account for Xcode downloads
+- macOS system (Xcode is macOS-only)
 
 # Install
 
@@ -42,8 +42,12 @@ asdf install xcode latest
 # Set a version globally (on your ~/.tool-versions file)
 asdf global xcode latest
 
-# Now xcode commands are available
+# Now xcode commands are available (via wrapper scripts)
 xcode --help
+xcrun --help
+
+# Or use with mise
+mise use -g xcode@16.2.0
 ```
 
 Check [asdf](https://github.com/asdf-vm/asdf) readme for more instructions on how to
