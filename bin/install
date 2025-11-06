@@ -12,114 +12,21 @@ if [ "$ASDF_INSTALL_TYPE" != "version" ]; then
 	fail "asdf-$TOOL_NAME supports release installs only"
 fi
 
-install_path="${ASDF_INSTALL_PATH%/bin}/bin"
-
-(
-	# Resolve partial versions to latest match
-	resolved_version=""
-	if ! resolved_version=$(resolve_version "$ASDF_INSTALL_VERSION"); then
-		fail "Failed to resolve version: $ASDF_INSTALL_VERSION"
-	fi
-
-	if [[ "$resolved_version" != "$ASDF_INSTALL_VERSION" ]]; then
-		echo "* Resolving $ASDF_INSTALL_VERSION to latest matching version: $resolved_version"
-	fi
-
-	ensure_xcodes_installed
-
-	echo "* Installing Xcode $resolved_version using xcodes..."
-	echo "* Looking for downloaded Xcode files in $ASDF_DOWNLOAD_PATH..."
-
-	# Use xcodes to install from the downloaded file
-	# xcodes install expects a directory, not a full path to .app
-	xcode_install_dir="${install_path%/*}"
-	mkdir -p "$xcode_install_dir"
-
-	# Check if there's a downloaded .xip file to use
-	xip_file=""
-	xip_file=$(find "$ASDF_DOWNLOAD_PATH" -name "*.xip" -type f | head -n1)
-	if [[ -n "$xip_file" ]]; then
-		echo "* Installing from downloaded file: $xip_file"
-		echo "* Installing to default location first, then moving..."
-		xcodes install --path "$xip_file" || fail "Failed to install Xcode $resolved_version from downloaded file"
-
-		# Find the installed Xcode in /Applications (xcodes creates it with proper name)
-		installed_app=$(find /Applications -name "Xcode*.app" -type d -newer "$xip_file" | head -n1)
-		if [[ -n "$installed_app" ]]; then
-			mkdir -p "$xcode_install_dir"
-			mv "$installed_app" "$xcode_install_dir/"
-		else
-			fail "Could not find newly installed Xcode after installation"
-		fi
-	else
-		echo "* No downloaded file found, installing directly..."
-		echo "* Installing to default location first, then moving..."
-		# Record time before install to help find the newly installed Xcode
-		timestamp_file="/tmp/xcode_install_timestamp_$$"
-		touch "$timestamp_file"
-		xcodes install "$resolved_version" || fail "Failed to install Xcode $resolved_version"
-
-		# Find the newly installed Xcode (should be newer than our timestamp)
-		installed_app=$(find /Applications -name "Xcode*.app" -type d -newer "$timestamp_file" | head -n1)
-		rm -f "$timestamp_file"
-		if [[ -n "$installed_app" ]]; then
-			mkdir -p "$xcode_install_dir"
-			mv "$installed_app" "$xcode_install_dir/"
-		else
-			fail "Could not find newly installed Xcode after installation"
-		fi
-	fi
-
-	# Verify installation was successful - find any Xcode.app in the install directory
-	xcode_app=$(find "$xcode_install_dir" -name "Xcode*.app" -type d | head -n1)
-	if [[ -z "$xcode_app" ]]; then
-		fail "Xcode installation verification failed - no Xcode.app found in $xcode_install_dir"
-	fi
-
-	echo "* Found Xcode at: $xcode_app"
-
-	echo "* Xcode $resolved_version installed successfully to $install_path"
-
-	# Create a wrapper script for xcode command
-	mkdir -p "$install_path"
-	cat >"$install_path/xcode" <<EOF
-#!/usr/bin/env bash
-# Xcode $ASDF_INSTALL_VERSION wrapper script
-# Use DEVELOPER_DIR if set (by asdf exec-env), otherwise use our installed version
-if [[ -z "\${DEVELOPER_DIR:-}" ]]; then
-    export DEVELOPER_DIR="$xcode_app/Contents/Developer"
+# Resolve partial versions to latest match
+resolved_version=""
+if ! resolved_version=$(resolve_version "$ASDF_INSTALL_VERSION"); then
+	fail "Failed to resolve version: $ASDF_INSTALL_VERSION"
 fi
-exec "\$DEVELOPER_DIR/usr/bin/xcodebuild" "\$@"
-EOF
-	chmod +x "$install_path/xcode"
 
-	# Also create xcrun wrapper
-	cat >"$install_path/xcrun" <<EOF
-#!/usr/bin/env bash
-# xcrun wrapper for Xcode $ASDF_INSTALL_VERSION
-# Use DEVELOPER_DIR if set (by asdf exec-env), otherwise use our installed version
-if [[ -z "\${DEVELOPER_DIR:-}" ]]; then
-    export DEVELOPER_DIR="$xcode_app/Contents/Developer"
+if [[ "$resolved_version" != "$ASDF_INSTALL_VERSION" ]]; then
+	echo "* Resolving $ASDF_INSTALL_VERSION to latest matching version: $resolved_version"
 fi
-exec "\$DEVELOPER_DIR/usr/bin/xcrun" "\$@"
-EOF
-	chmod +x "$install_path/xcrun"
 
-	# Create xcodebuild wrapper as well
-	cat >"$install_path/xcodebuild" <<EOF
-#!/usr/bin/env bash
-# xcodebuild wrapper for Xcode $ASDF_INSTALL_VERSION
-# Use DEVELOPER_DIR if set (by asdf exec-env), otherwise use our installed version
-if [[ -z "\${DEVELOPER_DIR:-}" ]]; then
-    export DEVELOPER_DIR="$xcode_app/Contents/Developer"
-fi
-exec "\$DEVELOPER_DIR/usr/bin/xcodebuild" "\$@"
-EOF
-	chmod +x "$install_path/xcodebuild"
+ensure_xcodes_installed
 
-	echo "$TOOL_NAME $ASDF_INSTALL_VERSION installation was successful!"
-	echo "You can now use: xcode, xcrun, or set DEVELOPER_DIR=$install_path/Xcode.app/Contents/Developer"
-) || (
-	rm -rf "$install_path"
-	fail "An error occurred while installing $TOOL_NAME $ASDF_INSTALL_VERSION."
-)
+echo "* Installing Xcode $resolved_version using xcodes..."
+
+# Use the same simple approach as klaaspieter/asdf-xcode
+xcodes install --directory "$ASDF_INSTALL_PATH" "$resolved_version" || fail "Failed to install Xcode $resolved_version"
+
+echo "* Xcode $resolved_version installed successfully to $ASDF_INSTALL_PATH"

@@ -25,14 +25,6 @@ echo "* Downloading $TOOL_NAME release $resolved_version..."
 ensure_xcodes_installed
 
 echo "* This may require your Apple ID credentials and can take a while..."
-echo "* Note: Download may be skipped if authentication fails - installation will download directly"
 
-# Try to download, but don't fail if it doesn't work (install can handle direct download)
-if xcodes download "$resolved_version" --directory "$ASDF_DOWNLOAD_PATH"; then
-	echo "* Xcode $resolved_version downloaded successfully to $ASDF_DOWNLOAD_PATH"
-else
-	echo "* Download failed, but installation will attempt direct download when needed"
-	echo "* This is normal if Apple ID authentication is not available"
-	# Create empty download directory so asdf knows download "completed"
-	touch "$ASDF_DOWNLOAD_PATH/.download-attempted"
-fi
+# Use the same simple approach as klaaspieter/asdf-xcode
+xcodes download --directory "$ASDF_DOWNLOAD_PATH" "$resolved_version"

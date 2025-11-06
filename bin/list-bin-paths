@@ -2,5 +2,8 @@
 
 set -euo pipefail
 
-# Tell asdf that our executables are in the bin/ directory
-echo "bin"
+# Find the Xcode.app and return its developer bin paths
+xcode_app=$(find "$ASDF_INSTALL_PATH" -name "Xcode*.app" -type d | head -n1)
+if [[ -n "$xcode_app" && -d "$xcode_app/Contents/Developer/usr/bin" ]]; then
+	echo "$xcode_app/Contents/Developer/usr/bin"
+fi
