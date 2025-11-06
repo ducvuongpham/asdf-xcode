@@ -8,4 +8,9 @@ plugin_dir=$(dirname "$(dirname "$current_script_path")")
 # shellcheck source=./lib/utils.bash
 source "${plugin_dir}/lib/utils.bash"
 
-list_all_versions | xargs echo
+# Get all available Xcode versions from xcodes (includes betas)
+# Format: "16.2 (16C5032a)" or "16.2 Beta (16C5013f)" or "16.2 Beta 2 (16C5013f)"
+# Extract everything before the opening parenthesis to preserve "Beta" keyword
+# xcodes list already provides chronological order, so preserve it and just remove duplicates
+ensure_xcodes_installed
+xcodes list | sed 's/ *(.*)$//' | grep -E '^[0-9]+\.[0-9]+' | awk '!seen[$0]++' | xargs echo

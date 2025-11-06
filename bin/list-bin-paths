@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Tell asdf that our executables are in the bin/ directory
+echo "bin"

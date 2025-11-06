@@ -10,6 +10,23 @@ source "${plugin_dir}/lib/utils.bash"
 
 mkdir -p "$ASDF_DOWNLOAD_PATH"
 
-# Download Xcode using xcodes (following asdf plugin conventions)
-release_file="$ASDF_DOWNLOAD_PATH/$TOOL_NAME-$ASDF_INSTALL_VERSION.xip"
-download_release "$ASDF_INSTALL_VERSION" "$release_file"
+# Resolve partial versions to latest match
+resolved_version=""
+if ! resolved_version=$(resolve_version "$ASDF_INSTALL_VERSION"); then
+	fail "Failed to resolve version: $ASDF_INSTALL_VERSION"
+fi
+
+if [[ "$resolved_version" != "$ASDF_INSTALL_VERSION" ]]; then
+	echo "* Resolving $ASDF_INSTALL_VERSION to latest matching version: $resolved_version"
+fi
+
+echo "* Downloading $TOOL_NAME release $resolved_version..."
+
+ensure_xcodes_installed
+
+echo "* This may require your Apple ID credentials and can take a while..."
+
+# Use xcodes to download the Xcode .xip file
+xcodes download "$resolved_version" --directory "$ASDF_DOWNLOAD_PATH" || fail "Failed to download Xcode $resolved_version"
+
+echo "* Xcode $resolved_version downloaded successfully to $ASDF_DOWNLOAD_PATH"

@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+current_script_path=${BASH_SOURCE[0]}
+plugin_dir=$(dirname "$(dirname "$current_script_path")")
+
+# shellcheck source=./lib/utils.bash
+source "${plugin_dir}/lib/utils.bash"
+
+# Get the install path for this version
+install_path="$ASDF_INSTALL_PATH"
+
+# Set DEVELOPER_DIR to the Xcode.app for this version
+if [[ -d "$install_path/bin/Xcode.app" ]]; then
+	export DEVELOPER_DIR="$install_path/bin/Xcode.app/Contents/Developer"
+
+	# Also use xcodes to select this version globally
+	ensure_xcodes_installed
+	if command -v xcodes &>/dev/null; then
+		xcodes select "$install_path/bin/Xcode.app" 2>/dev/null || true
+	fi
+fi
