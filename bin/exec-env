@@ -11,13 +11,14 @@ source "${plugin_dir}/lib/utils.bash"
 # Get the install path for this version
 install_path="$ASDF_INSTALL_PATH"
 
-# Set DEVELOPER_DIR to the Xcode.app for this version
-if [[ -d "$install_path/bin/Xcode.app" ]]; then
-	export DEVELOPER_DIR="$install_path/bin/Xcode.app/Contents/Developer"
+# Find the Xcode.app for this version (could be named Xcode-X.Y.Z.app)
+xcode_app=$(find "$install_path/bin" -name "Xcode*.app" -type d | head -n1)
+if [[ -n "$xcode_app" && -d "$xcode_app" ]]; then
+	export DEVELOPER_DIR="$xcode_app/Contents/Developer"
 
 	# Also use xcodes to select this version globally
 	ensure_xcodes_installed
 	if command -v xcodes &>/dev/null; then
-		xcodes select "$install_path/bin/Xcode.app" 2>/dev/null || true
+		xcodes select "$xcode_app" 2>/dev/null || true
 	fi
 fi
