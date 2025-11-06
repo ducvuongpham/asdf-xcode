@@ -40,17 +40,49 @@ install_path="${ASDF_INSTALL_PATH%/bin}/bin"
 	xip_file=$(find "$ASDF_DOWNLOAD_PATH" -name "*.xip" -type f | head -n1)
 	if [[ -n "$xip_file" ]]; then
 		echo "* Installing from downloaded file: $xip_file"
-		xcodes install --path "$xip_file" --directory "$xcode_install_dir" || fail "Failed to install Xcode $resolved_version from downloaded file"
+		echo "* Installing to default location first, then moving..."
+		xcodes install --path "$xip_file" || fail "Failed to install Xcode $resolved_version from downloaded file"
+
+		# Move from default location to our install directory
+		default_xcode_path="/Applications/Xcode-${resolved_version}.app"
+		if [[ -d "$default_xcode_path" ]]; then
+			mkdir -p "$xcode_install_dir"
+			mv "$default_xcode_path" "$install_path/Xcode.app"
+		else
+			# Try to find the installed Xcode in /Applications
+			installed_app=$(find /Applications -name "Xcode*.app" -type d | grep -E "Xcode-?${resolved_version//./\\.}" | head -n1)
+			if [[ -n "$installed_app" ]]; then
+				mkdir -p "$xcode_install_dir"
+				mv "$installed_app" "$install_path/Xcode.app"
+			else
+				fail "Could not find installed Xcode after installation"
+			fi
+		fi
 	else
 		echo "* No downloaded file found, installing directly..."
-		xcodes install "$resolved_version" --directory "$xcode_install_dir" || fail "Failed to install Xcode $resolved_version"
+		echo "* Installing to default location first, then moving..."
+		xcodes install "$resolved_version" || fail "Failed to install Xcode $resolved_version"
+
+		# Move from default location to our install directory
+		default_xcode_path="/Applications/Xcode-${resolved_version}.app"
+		if [[ -d "$default_xcode_path" ]]; then
+			mkdir -p "$xcode_install_dir"
+			mv "$default_xcode_path" "$install_path/Xcode.app"
+		else
+			# Try to find the installed Xcode in /Applications
+			installed_app=$(find /Applications -name "Xcode*.app" -type d | grep -E "Xcode-?${resolved_version//./\\.}" | head -n1)
+			if [[ -n "$installed_app" ]]; then
+				mkdir -p "$xcode_install_dir"
+				mv "$installed_app" "$install_path/Xcode.app"
+			else
+				fail "Could not find installed Xcode after installation"
+			fi
+		fi
 	fi
 
-	# xcodes creates Xcode-X.Y.Z.app, we need to find and rename it to Xcode.app
-	installed_app=""
-	installed_app=$(find "$xcode_install_dir" -name "Xcode*.app" -type d | head -n1)
-	if [[ -n "$installed_app" && "$installed_app" != "$install_path/Xcode.app" ]]; then
-		mv "$installed_app" "$install_path/Xcode.app"
+	# Verify installation was successful
+	if [[ ! -d "$install_path/Xcode.app" ]]; then
+		fail "Xcode installation verification failed - Xcode.app not found at $install_path"
 	fi
 
 	echo "* Xcode $resolved_version installed successfully to $install_path"
